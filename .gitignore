@@ -1,0 +1,14 @@
+# 비밀/런타임 파일 (업로드 금지)
+.env
+.ht_cookies.json
+*.log
+
+# 배포 보조 파일
+ht_fan_install_oneliner.txt
+patch_oneliner.txt
+
+# 파이썬
+__pycache__/
+*.pyc
+.venv/
+venv/
