@@ -6,6 +6,7 @@ import json
 import os
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 try:
@@ -50,7 +51,8 @@ CTOC_TOKEN_EXPIRED = {"704", "705"}
 AUTH_EXPIRED = {"701", "706", "109"}
 
 ENV_KEYS = ("HT_ID", "HT_PW", "HT_SITE_ID", "HT_DONG", "HT_HO", "HT_FAN_ID",
-            "HT_HTTP2", "HT_BROWSER_HEADERS", "HT_CHARSET", "HT_TIMEOUT")
+            "HT_HTTP2", "HT_BROWSER_HEADERS", "HT_CHARSET", "HT_TIMEOUT",
+            "TG_BOT_TOKEN", "TG_CHAT_ID")
 
 
 def load_env(path=ENV_FILE):
@@ -309,6 +311,21 @@ class HTClient:
             return st, True
 
 
+def now_str():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def notify(cfg, text):
+    token, chat = cfg.get("TG_BOT_TOKEN"), cfg.get("TG_CHAT_ID")
+    if not token or not chat:
+        return
+    try:
+        httpx.post(f"https://api.telegram.org/bot{token}/sendMessage",
+                   json={"chat_id": chat, "text": text}, timeout=10)
+    except Exception:
+        pass
+
+
 def status_map(data):
     return {s.get("command"): s.get("value") for s in (data or {}).get("statusList") or []}
 
@@ -329,7 +346,7 @@ def cmd_status(c, a):
     c.ensure_session()
     fid = c.fan_id()
     d = c.fan_status(fid)
-    print(json.dumps(d, ensure_ascii=False, indent=2) if a.json else f"{fid}: {fmt_status(d)}")
+    print(json.dumps(d, ensure_ascii=False, indent=2) if a.json else f"{now_str()}  {fid}: {fmt_status(d)}")
 
 
 def cmd_devices(c, a):
@@ -357,11 +374,16 @@ def cmd_power(c, a, value):
             d, timed_out = d2, to2
     m = status_map(d)
     tag = " (timeout, re-read)" if timed_out else ""
-    print(f"{fid}: {fmt_status(d)}{tag}")
+    print(f"{now_str()}  {fid}: {fmt_status(d)}{tag}")
     if not ok_power:
+        notify(c.cfg, f"⚠️ 환기 {'켜기' if value == 'on' else '끄기'} 실패  {now_str()}")
         return 2
     if want_wind and m.get("wind") != want_wind:
         print(f"[warn] wind {want_wind} not applied (now {m.get('wind')})", file=sys.stderr)
+    if value == "on":
+        notify(c.cfg, f"🌀 환기 켜짐 · 풍량 {m.get('wind')}  {now_str()}")
+    else:
+        notify(c.cfg, f"💤 환기 꺼짐  {now_str()}")
     return 0
 
 
@@ -369,7 +391,7 @@ def cmd_wind(c, a):
     c.ensure_session()
     fid = c.fan_id()
     d, timed_out = c.fan_control_or_poll(fid, [{"command": "wind", "value": norm_wind(a.value)}])
-    print(f"{fid}: {fmt_status(d)}{' (timeout, re-read)' if timed_out else ''}")
+    print(f"{now_str()}  {fid}: {fmt_status(d)}{' (timeout, re-read)' if timed_out else ''}")
 
 
 DIAG_VARIANTS = [

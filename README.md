@@ -31,8 +31,20 @@ python ht_fan.py wind pow          # 풍량만 변경
 | `HT_SITE_ID`, `HT_DONG`, `HT_HO` | 세대 (비우면 계정의 첫 세대) |
 | `HT_FAN_ID` | 환기 기기 id (비우면 첫 번째 fan) |
 | `HT_TIMEOUT` | 요청 타임아웃 초 (기본 20) |
+| `TG_BOT_TOKEN`, `TG_CHAT_ID` | 텔레그램 알림용 (선택) |
 
 세션 쿠키는 `.ht_cookies.json` 에 저장해 재사용하고, 만료되면 자동으로 다시 로그인한다.
+
+`on` / `off` 출력에는 실행 시각이 함께 찍힌다.
+
+## 텔레그램 알림 (선택)
+
+`TG_BOT_TOKEN` 과 `TG_CHAT_ID` 를 채우면 환기가 켜지고 꺼질 때 텔레그램 메시지를 보낸다.
+
+1. 텔레그램에서 **@BotFather** 로 봇을 만들고 토큰을 받는다.
+2. 받을 곳의 chat id 를 구한다. 개인 채팅이면 봇에게 아무 메시지나 보낸 뒤
+   `https://api.telegram.org/bot<토큰>/getUpdates` 의 `chat.id`, 채널이면 봇을 관리자로 추가하고 `@채널이름` 또는 `-100...` 숫자 id 를 쓴다.
+3. `.env` 에 두 값을 넣는다. 비워 두면 알림 없이 동작한다.
 
 ## 스케줄
 
